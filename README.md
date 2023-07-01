@@ -147,7 +147,7 @@ imageProcessor.dispose();
 
 ## get CMR.ImageProcessor.geometry
 Свойства отображающее текущее состояние изображения
-```json
+```js
 {
     cropWidth: Float,
     cropHeight: Float,
