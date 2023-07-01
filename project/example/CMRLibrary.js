@@ -106,7 +106,7 @@ console.log("%cCMRLibrary version: 2.0.1", 'font-family: monospace; font-size: 1
 			if (this._state.isDisposed)
 				throw new Error('Instance was disposed');
 
-			if (this._baseElement.querySelector('.cmr-resize-image-wrapper'))
+			if (this._baseElement.querySelector('.cmr-rotated-base-wrapper'))
 				throw new Error('Crop is already exist');
 
 			const rotationBaseElement = this._baseElement.querySelector('.cmr-rotation-base');
@@ -390,7 +390,12 @@ console.log("%cCMRLibrary version: 2.0.1", 'font-family: monospace; font-size: 1
 		}
 
 		dispose() {
-			this.clear();
+			if (this._state.isDisposed)
+				throw new Error('Instance is already disposed');
+			const cropperWrapper = this._baseElement.querySelector('.cmr-rotated-base-wrapper');
+			if (cropperWrapper !== null) {
+				this.removeCrop();
+			}
 			delete this._baseElement._cmr;
 			this._baseElement = null;
 			this._state.isDisposed = true;
@@ -404,7 +409,16 @@ console.log("%cCMRLibrary version: 2.0.1", 'font-family: monospace; font-size: 1
 
 	CMR.ImageProcessor = ImageProcessor;
 
-	CMR.createImage = function(image, {
+	CMR.createImageAsync = function(image, options, callback) {
+		image = image instanceof HTMLImageElement ? image : Object.assign(document.createElement('img'), {src: image});
+		if (typeof callback == 'function') {
+			image.complete ? callback(CMR.createImage(image, options)) : image.addEventListener('load', () => callback(CMR.createImage(image, options)));
+		} else {
+			return new Promise(resolve => image.addEventListener('load', () => resolve(CMR.createImage(image, options))));
+		}
+	};
+
+	CMR.createImage = function createImage(image, {
 		baseWidth = image.naturalWidth,
 		baseHeight = image.naturalHeight,
 		cropX = 0,
@@ -416,7 +430,7 @@ console.log("%cCMRLibrary version: 2.0.1", 'font-family: monospace; font-size: 1
 		imageWidth = image.naturalWidth,
 		imageHeight = image.naturalHeight,
 		angle = 0,
-	}) {
+	} = {}) {
 		function createElement(tagName, {
 			options = {}, attributes = {}, children = [], parent, init
 		}) {

@@ -8,6 +8,7 @@
         <!-- Подключение библиотеки -->
         <link href="CMRLibrary.css" rel="stylesheet">
         <script src="CMRLibrary.js"></script>
+        <!-- Конец подключения библиотеки -->
         <style>
             * {
                 margin: unset;
@@ -47,12 +48,9 @@
                 flex-direction: column;
                 align-items: center;
             }
-
-
         </style>
     </head>
     <body>
-        <script src="example.js" defer></script>
         <div id="bg">
             <div id="band">
                 <div class="content"></div>
@@ -72,5 +70,17 @@
                 </div>
             </div>
         </div>
+        <script>
+            const base = document.getElementById("example");
+            const image = new window.CMR.ImageProcessor(base);
+
+            function setCrop() {
+                image.setCrop();
+            }
+
+            function removeCrop() {
+                image.removeCrop();
+            }
+        </script>
     </body>
 </html>
