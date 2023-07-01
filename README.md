@@ -145,7 +145,7 @@ imageProcessor.removeCrop();
 imageProcessor.dispose();
 ```
 
-## get CMR.ImageProcessor.geometry
+## get CMR.ImageProcessor.prototype.geometry
 Свойства отображающее текущее состояние изображения
 ```js
 {
