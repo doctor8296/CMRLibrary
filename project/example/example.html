@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Пример работы библиотеки CMSLibrary</title>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <link rel="icon" href="favicon.ico" type="image/x-icon">
+        <!-- Подключение библиотеки -->
+        <link href="CMRLibrary.css" rel="stylesheet">
+        <script src="CMRLibrary.js"></script>
+        <style>
+            * {
+                margin: unset;
+                padding: unset;
+                appearance: none;
+                outline: none;
+                border: none;
+            }
+
+            html, body, #bg {
+                width: 100%;
+                height: 100%;
+            } 
+
+            #bg {
+                background-color: #555;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            #band {
+                background-color: #888;
+                width: 1000px;
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .content {
+                flex: 1
+            }
+
+            .example-content {
+                background-color:darkgray;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+
+        </style>
+    </head>
+    <body>
+        <script src="example.js" defer></script>
+        <div id="bg">
+            <div id="band">
+                <div class="content"></div>
+                <div class="example-content">
+                    <div id="example" class="cmr-base" style="width: 800px; height: 600px; background-color:lightblue;">
+                        <div class="cmr-rotation-base" style="transform: rotate(30deg);">
+                            <img class="cmr-image" src="example_image_apples.png" style="width: 600px; height: 450px; left: 110px; top: 70px;">
+                            <div class="cmr-real-crop" style="width: 505.731px; height: 363.512px; top: 120.488px; left: 156.269px;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="content">
+                    <div style="display: flex; flex-direction: row; width: 800px; gap: 10px; margin-top: 10px;">
+                        <button style="padding:10px;" onclick="setCrop();">setCrop</button>
+                        <button style="padding:10px;" onclick="removeCrop();">saveCrop</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
