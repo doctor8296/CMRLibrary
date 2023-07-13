@@ -1,3 +1,15 @@
+
+.cmr-frame-controller-wrapper {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    cursor: move;
+}
+
+.cmr-frame-controller-wrapper:active {
+    cursor: grab;
+}
+
 .cmr-rotated-base-wrapper {
     width: 100%;
     height: 100%;
@@ -16,14 +28,14 @@
     position: absolute;
 }
 
-.cmr-resize-image-wrapper {
+.cmr-image-controller {
     cursor: move;
     position: absolute;
     transform-origin: top left;
     outline: 2px solid rgb(98, 166, 255);
 }
 
-.cmr-resize-image-wrapper:active {
+.cmr-image-controller:active {
     cursor: grab;
 }
 
@@ -31,12 +43,9 @@
     position: absolute;
 }
 
-.cmr-crop-wrapper {
-    position: absolute;
-}
-
 .cmr-image {
-    transform-origin: top left;
+    pointer-events: none;
+    user-select: none;
     position: absolute;
 }
 
@@ -46,29 +55,47 @@
     position: absolute;
 }
 
-.cmr-base {
+.cmr-container {
     position: relative;
     user-select: none;
     overflow: hidden;
 }
 
-.cmr-real-crop {
-    transform-origin: top left;
+.cmr-container.edit {
+    overflow: visible;
+}
+
+.cmr-controller {
+    position: absolute;
+    z-index: 9999;
+    width: 100%;
+    height: 100%;
+}
+
+.cmr-image-copy {
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    user-select: none;
+    pointer-events: none;
+}
+
+.cmr-frame {
     overflow: hidden;
     display: inline-block;
     line-height: 0;
     position: absolute;
-    box-shadow: 0px 0px 0px 20000px #d3d3d3;
 }
 
-.cmr-real-crop.edit {
-    box-shadow: 0px 0px 0px 20000px #00000088;
+.cmr-frame.edit {
+    opacity: 0;
 }
 
-.cmr-crop {
+.cmr-frame-controller {
     position: absolute;
-    box-shadow: 0px 0px 0px 20000px #00000080;
     outline: 1px solid violet;
+    box-shadow: 0px 0px 0px 20000px #00000080;
 }
 
 .cmr-resize {
@@ -95,29 +122,29 @@
     cursor: grab;
 }
 
-.cmr-cropper-frames {
+.cmr-grid {
     position: absolute;
     outline: 1px dashed #ffffff88;
 }
 
-.cmr-cropper-frames.vert {
+.cmr-grid.vert {
     width: calc(100% / 3);
     height: 100%;
     left: calc(100% / 3);
 }
 
-.cmr-cropper-frames.hor {
+.cmr-grid.hor {
     width: 100%;
     height: calc(100% / 3);
     top: calc(100% / 3);
 }
 
-.cmr-cropper-point {
+.cmr-frame-controller-point {
     position: absolute;
     width: 6px;
     height: 6px;
     background-color: violet;
-    z-index: 2;
+    z-index: 1;
 }
 
 .cmr-resizer-point {

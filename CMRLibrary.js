@@ -1,383 +1,511 @@
 // CMRLibrary
-// version 2.0.1
+// version 4.1.5
 // by Doctor8296
 
 console.log("%cCMRLibrary version: 2.0.1", 'font-family: monospace; font-size: 10 qpx; color: lime; background:black; padding-inline: 5px;');
+
 
 (function() {
 
 	const CMR = window.CMR = {};
 
 	class ImageProcessor {
-		constructor(baseElement) {
+		constructor(frame) {
 
-			if ("_cmr" in baseElement) 
+			if ("_cmr" in frame)
 				throw new Error('Element already has attached CMR instance');
-			baseElement._cmr = this;
 
-			this._baseElement = baseElement;
-
-			this._state = {
-				isDisposed: false,
-				mouseMoveFunction: null,
-				imageMoveFunction: null
-			};
+			this._frame = frame;
+			this._controller = null;
+			frame._cmr = this;
+			const image = this._frame.querySelector('.cmr-image');
+			const container = frame.parentNode;
 
 			Object.defineProperty(this, 'geometry', {
 				get() {
-					if (this._state.isDisposed)
-						throw new Error('Instance was disposed');
-					const rotationBaseElement = this._baseElement.querySelector('.cmr-rotation-base');
-					const realCropElement = this._baseElement.querySelector('.cmr-real-crop');
-					const imageElement = this._baseElement.querySelector('.cmr-image');
+					const angle = Number.parseFloat((frame.style.transform.match(/rotate\((.*?)deg\)/) || [])[1]) || 0;
 					return {
-						cropWidth: realCropElement.clientWidth,
-						cropHeight: realCropElement.clientHeight,
-						cropX: realCropElement.offsetLeft,
-						cropY: realCropElement.offsetTop,
-						realCropEndX: realCropElement.offsetLeft + realCropElement.clientWidth,
-						realCropEndY: realCropElement.offsetTop + realCropElement.clientHeight,
-						imageWidth: imageElement.clientWidth,
-						imageHeight: imageElement.clientHeight,
-						imageX: imageElement.offsetLeft,
-						imageY: imageElement.offsetTop,
-						imageEndX: imageElement.offsetLeft + imageElement.clientWidth,
-						imageEndY: imageElement.offsetTop + imageElement.clientHeight,
-						baseWidth: this._baseElement.clientWidth,
-						baseHeight: this._baseElement.clientHeight,
-						baseX: this._baseElement.offsetLeft,
-						baseY: this._baseElement.offsetTop,
-						angle: Number.parseFloat((rotationBaseElement.style.transform.match(/rotate\((.*?)deg\)/) || [])[1]) || 0,
-						imageRatio: imageElement.naturalWidth / imageElement.naturalHeight
+						// FRAME
+
+						// container relative position
+						frameWidth: frame.clientWidth,
+						frameHeight: frame.clientHeight,
+						frameX0: frame.offsetLeft,
+						frameY0: frame.offsetTop,
+						frameX1: frame.offsetLeft + frame.clientWidth,
+						frameY1: frame.offsetTop + frame.clientHeight,
+						frameCenterX: frame.offsetLeft + frame.clientWidth / 2,
+						frameCenterY: frame.offsetTop + frame.clientHeight / 2,
+						frameContainerX0: this._relToWorld(frame.offsetLeft, frame.offsetTop, frame.clientWidth, frame.clientHeight, angle, 0, 0)[0],
+						frameContainerY0: this._relToWorld(frame.offsetLeft, frame.offsetTop, frame.clientWidth, frame.clientHeight, angle, 0, 0)[1],
+						frameContainerX1: this._relToWorld(frame.offsetLeft, frame.offsetTop, frame.clientWidth, frame.clientHeight, angle, frame.clientWidth, frame.clientHeight)[0],
+						frameContainerY1: this._relToWorld(frame.offsetLeft, frame.offsetTop, frame.clientWidth, frame.clientHeight, angle, frame.clientWidth, frame.clientHeight)[1],
+						frameCenterContainerX: this._relToWorld(frame.offsetLeft, frame.offsetTop, frame.clientWidth, frame.clientHeight, angle, frame.clientWidth / 2, frame.clientHeight / 2)[0],
+						frameCenterContainerY: this._relToWorld(frame.offsetLeft, frame.offsetTop, frame.clientWidth, frame.clientHeight, angle, frame.clientWidth / 2, frame.clientHeight / 2)[1],
+
+						// IMAGE
+						imageWidth: image.clientWidth,
+						imageHeight: image.clientHeight,
+
+						// frame relative position
+						imageFrameX0: image.offsetLeft,
+						imageFrameY0: image.offsetTop,
+						imageFrameX1: image.offsetLeft + image.offsetLeft,
+						imageFrameY1: image.offsetTop + image.offsetTop,
+						imageCenterFrameX: image.offsetLeft + image.offsetLeft / 2,
+						imageCenterFrameY: image.offsetTop + image.offsetTop / 2,
+
+						// container unrotated relative position
+						imageUnrotatedContainerX0: frame.offsetLeft + image.offsetLeft,
+						imageUnrotatedContainerY0: frame.offsetTop + image.offsetTop,
+						imageUnrotatedContainerX1: frame.offsetLeft + image.offsetLeft + image.clientWidth,
+						imageUnrotatedContainerY1: frame.offsetTop + image.offsetTop + image.clientHeight,
+						imageCenterUnrotatedContainerX: image.offsetLeft + image.clientWidth / 2,
+						imageCenterUnrotatedContainerY: image.offsetTop + image.clientHeight / 2,
+
+						// container relative position
+						imageContainerX0: this._relToWorld(frame.offsetLeft, frame.offsetTop, frame.clientWidth, frame.clientHeight, angle, image.offsetLeft, image.offsetTop)[0],
+						imageContainerY0: this._relToWorld(frame.offsetLeft, frame.offsetTop, frame.clientWidth, frame.clientHeight, angle, image.offsetLeft, image.offsetTop)[1],
+						imageContainerX1: this._relToWorld(frame.offsetLeft, frame.offsetTop, frame.clientWidth, frame.clientHeight, angle, image.offsetLeft + image.clientWidth, image.offsetTop + image.clientHeight)[0],
+						imageContainerY1: this._relToWorld(frame.offsetLeft, frame.offsetTop, frame.clientWidth, frame.clientHeight, angle, image.offsetLeft + image.clientWidth, image.offsetTop + image.clientHeight)[1],
+						imageCenterContainerX: this._relToWorld(frame.offsetLeft, frame.offsetTop, frame.clientWidth, frame.clientHeight, angle, image.offsetLeft + image.clientWidth / 2, image.offsetTop + image.clientHeight / 2)[0],
+						imageCenterContainerY: this._relToWorld(frame.offsetLeft, frame.offsetTop, frame.clientWidth, frame.clientHeight, angle, image.offsetLeft + image.clientWidth / 2, image.offsetTop + image.clientHeight / 2)[1],
+
+						// CONTAINER
+						containerWidth: container.clientWidth,
+						containerHeight: container.clientHeight,
+
+						// document absolute container position
+						containerX0: container.getBoundingClientRect().left,
+						containerY0: container.getBoundingClientRect().top,
+						containerX1: container.getBoundingClientRect().left + container.clientWidth,
+						containerY1: container.getBoundingClientRect().top + container.clientHeight,
+						containerCenterX: container.getBoundingClientRect().left + container.clientWidth / 2,
+						containerCenterY: container.getBoundingClientRect().top + container.clientHeight / 2,
+
+						// ADDITIONAL VALUES
+						angle: angle,
+						angleDegrees: angle,
+						angleRadians: (angle * Math.PI) / 180,
+						ratio: image.naturalWidth / image.naturalHeight
 					};
 				}
 			});
 		}
 
+		getFrame() {
+			return this._frame;
+		}
+
 		_relToWorld(offsetLeft, offsetTop, width, height, angleDegrees, x, y) {
-			var angleRadians = (angleDegrees * Math.PI) / 180;
-			var cx = width / 2;
-			var cy = height / 2;
-			var rotatedCx = cx * Math.cos(angleRadians) - cy * Math.sin(angleRadians);
-			var rotatedCy = cx * Math.sin(angleRadians) + cy * Math.cos(angleRadians);
-			var newDx = offsetLeft + (cx - rotatedCx);
-			var newDy = offsetTop + (cy - rotatedCy);
-			var rotatedX = (x * Math.cos(angleRadians)) - (y * Math.sin(angleRadians));
-			var rotatedY = (x * Math.sin(angleRadians)) + (y * Math.cos(angleRadians));
-			var pointX = rotatedX + newDx;
-			var pointY = rotatedY + newDy;
+			const angleRadians = (angleDegrees * Math.PI) / 180;
+			const cx = width / 2;
+			const cy = height / 2;
+			const rotatedCx = cx * Math.cos(angleRadians) - cy * Math.sin(angleRadians);
+			const rotatedCy = cx * Math.sin(angleRadians) + cy * Math.cos(angleRadians);
+			const newDx = offsetLeft + (cx - rotatedCx);
+			const newDy = offsetTop + (cy - rotatedCy);
+			const rotatedX = (x * Math.cos(angleRadians)) - (y * Math.sin(angleRadians));
+			const rotatedY = (x * Math.sin(angleRadians)) + (y * Math.cos(angleRadians));
+			const pointX = rotatedX + newDx;
+			const pointY = rotatedY + newDy;
 			return [pointX, pointY];
 		}
 
 		_worldToRel(offsetLeft, offsetTop, width, height, angleDegrees, x, y) {
-			var angleRadians = (angleDegrees * Math.PI) / 180;
-			var cx = width / 2;
-			var cy = height / 2;
-			var rotatedCx = cx * Math.cos(angleRadians) - cy * Math.sin(angleRadians);
-			var rotatedCy = cx * Math.sin(angleRadians) + cy * Math.cos(angleRadians);
-			var newDx = offsetLeft + (cx - rotatedCx);
-			var newDy = offsetTop + (cy - rotatedCy);
-			var pointX = x - newDx;
-			var pointY = y - newDy;
-			var rotatedX = (pointX * Math.cos(angleRadians)) + (pointY * Math.sin(angleRadians));
-			var rotatedY = (-pointX * Math.sin(angleRadians)) + (pointY * Math.cos(angleRadians));
+			const angleRadians = (angleDegrees * Math.PI) / 180;
+			const cx = width / 2;
+			const cy = height / 2;
+			const rotatedCx = cx * Math.cos(angleRadians) - cy * Math.sin(angleRadians);
+			const rotatedCy = cx * Math.sin(angleRadians) + cy * Math.cos(angleRadians);
+			const newDx = offsetLeft + (cx - rotatedCx);
+			const newDy = offsetTop + (cy - rotatedCy);
+			const pointX = x - newDx;
+			const pointY = y - newDy;
+			const rotatedX = (pointX * Math.cos(angleRadians)) + (pointY * Math.sin(angleRadians));
+			const rotatedY = (-pointX * Math.sin(angleRadians)) + (pointY * Math.cos(angleRadians));
 			return [rotatedX, rotatedY];
 		}
 
+		_containerToFrameRelative(x, y) {
+			return this._worldToRel(
+				this.geometry.frameX0,
+				this.geometry.frameY0,
+				this.geometry.frameWidth,
+				this.geometry.frameHeight,
+				this.geometry.angle,
+				x,
+				y
+			);
+		}
+
+		_frameToContainer(x, y) {
+			return this._relToWorld(this.geometry.frameX0, this.geometry.frameY0, this.geometry.frameWidth, this.geometry.frameHeight, this.geometry.angle, x, y);
+		}
+
+
 		_baseToRotateBase(x, y) {
-			return this._worldToRel(0, 0, this.geometry.baseWidth, this.geometry.baseHeight, this.geometry.angle, x, y);
+			return this._worldToRel(0, 0, this.geometry.containerWidth, this.geometry.containerHeight, this.geometry.angleDegrees, x, y);
 		}
 
-		getBase() {
-			return this._baseElement;
+		removeController() {
+			const frame = this._frame;
+			const image = frame.querySelector('.cmr-image');
+			const container = frame.parentNode;
+
+			if (this._controller === null || this._controller.parentNode !== container)
+				throw new Error('No controller found');
+
+			const imageController = container.querySelector('.cmr-image-controller');
+			const frameController = container.querySelector('.cmr-frame-controller');
+
+			image.style.width = imageController.style.width;
+			image.style.height = imageController.style.height;
+			frame.style.width = frameController.style.width;
+			frame.style.height = frameController.style.height;
+
+			image.style.left = imageController.offsetLeft - frameController.offsetLeft + 'px';
+			image.style.top = imageController.offsetTop - frameController.offsetTop + 'px';
+
+			const [frameControllerX, frameControllerY] = this._relToWorld(
+				0, 0, this.geometry.containerWidth, this.geometry.containerHeight, this.geometry.angleDegrees, frameController.offsetLeft, frameController.offsetTop
+			);
+
+			const [left, top] = this.calculateLeftTopPositionByAbsoluteXYofUpperLeftCorner(this.geometry.frameWidth, this.geometry.frameHeight, this.geometry.angleDegrees, frameControllerX, frameControllerY);
+
+			frame.style.left = left + 'px';
+			frame.style.top = top + 'px';
+
+			container.classList.remove('edit');
+			frame.classList.remove('edit');
+			this._controller.remove();
+			this._controller = null;
 		}
 
-		removeCrop() {
-			const rotatedBaseWrapper = this._baseElement.querySelector('.cmr-rotated-base-wrapper');
-			if (rotatedBaseWrapper === null)
-				throw new Error('No crop found');
+		calculateLeftTopPositionByAbsoluteXYofUpperLeftCorner(rect2Width, rect2Height, rect2Angle, X, Y) {
+			const angleInRadians = rect2Angle * Math.PI / 180;
 
-			const realCropElement = this._baseElement.querySelector('.cmr-real-crop');
-			realCropElement.classList.remove('edit');
-			rotatedBaseWrapper.remove();
+			const rect2CenterX = X + (rect2Width / 2) * Math.cos(angleInRadians) - (rect2Height / 2) * Math.sin(angleInRadians);
+			const rect2CenterY = Y + (rect2Height / 2) * Math.cos(angleInRadians) + (rect2Width / 2) * Math.sin(angleInRadians);
+
+			const rect2Top = rect2CenterY - rect2Height / 2;
+			const rect2Left = rect2CenterX - rect2Width / 2;
+			return [rect2Left, rect2Top];
 		}
 
-		setCrop() {
-			if (this._state.isDisposed)
-				throw new Error('Instance was disposed');
+		setController() {
+			const frame = this._frame;
+			const image = frame.querySelector('.cmr-image');
+			const container = frame.parentNode;
 
-			if (this._baseElement.querySelector('.cmr-rotated-base-wrapper'))
-				throw new Error('Crop is already exist');
+			if (container.querySelector('.cmr-controller'))
+				throw new Error('frame is already exist');
 
-			const rotationBaseElement = this._baseElement.querySelector('.cmr-rotation-base');
-			const realCropElement = this._baseElement.querySelector('.cmr-real-crop');
-			const imageElement = this._baseElement.querySelector('.cmr-image');
+			frame.classList.add('edit');
+			container.classList.add('edit');
 
-			realCropElement.classList.add('edit');
-
-			const resizeWrapper = this._createElement('div', {
+			const imageController = this._createElement('div', {
 				options: {
-					className: 'cmr-resize-image-wrapper',
-					style: `width: ${this.geometry.imageWidth}px; height: ${this.geometry.imageHeight}px; left: ${this.geometry.imageX}px; top: ${this.geometry.imageY}px;);`,
+					style: `position: absolute; width: ${this.geometry.imageWidth}px; height: ${this.geometry.imageHeight}px;`,
+					className: 'cmr-image-controller',
+				},
+				init: element => {
+					const [imageControllerX0, imageControllerY0] = this._worldToRel(0, 0, this.geometry.containerWidth, this.geometry.containerHeight, this.geometry.angleDegrees, this.geometry.imageContainerX0, this.geometry.imageContainerY0);
+					element.style.left = imageControllerX0 + 'px';
+					element.style.top = imageControllerY0 + 'px';
 				},
 				children: [
+					Object.assign(image.cloneNode(true), {
+						style: '',
+						className: 'cmr-image-copy'
+					})
+				].concat([
 					'ne', 'nw', 'sw', 'se'
 				].map(positionName => {
 					return this._createElement('span', {
 						options: {
 							className: `cmr-resizer-point cmr-point-${positionName}`,
 							onmousedown: mouseDownEvent => {
-								const startImageWidth = this.geometry.imageWidth;
-								const startImageHeight = this.geometry.imageHeight;
-								const startImageX = this.geometry.imageX;
-								const startImageY = this.geometry.imageY;
-								const startImageEndY = this.geometry.imageEndY;
-								const startImageEndX = this.geometry.imageEndX;
-								window.addEventListener('mousemove', this._state.resizePointMoveFunction = resizePointMoveEvent => {
-									const relativeBaseX = resizePointMoveEvent.clientX - this.geometry.baseX;
-									const relativeBaseY = resizePointMoveEvent.clientY - this.geometry.baseY;
+								const startImageWidth = imageController.clientWidth;
+								const startImageHeight = imageController.clientHeight;
+								const startImageX0 = imageController.offsetLeft;
+								const startImageY0 = imageController.offsetTop;
+								const startImageX1 = imageController.offsetLeft + imageController.clientWidth;
+								const startImageY1 = imageController.offsetTop + imageController.clientHeight;
+
+								const resize = resizePointMoveEvent => {
+									const relativeBaseX = resizePointMoveEvent.clientX - this.geometry.containerX0;
+									const relativeBaseY = resizePointMoveEvent.clientY - this.geometry.containerY0;
 									const [x, y] = this._baseToRotateBase(relativeBaseX, relativeBaseY);
 
-									switch(positionName) {
-										case 'se': {
-											const relImageX = x - this.geometry.imageX;
-											const relImageY = y - this.geometry.imageY;
-											const perimteter = relImageX + relImageY;
-											let calculatedWidth = perimteter * this.geometry.imageRatio / (this.geometry.imageRatio + 1);
-											let calculatedHeight = perimteter - calculatedWidth;
+									switch (positionName) {
+										case 'se':
+											{
+												const relImageX = x - imageController.offsetLeft;
+												const relImageY = y - imageController.offsetTop;
+												const perimteter = relImageX + relImageY;
+												let calculatedWidth = perimteter * this.geometry.ratio / (this.geometry.ratio + 1);
+												let calculatedHeight = perimteter - calculatedWidth;
 
-											const minWidth = this.geometry.realCropEndX - this.geometry.imageX;
-											const minHeight = this.geometry.realCropEndY - this.geometry.imageY;
-											if (calculatedHeight < minHeight && minWidth <= minHeight * this.geometry.imageRatio) {
-												calculatedWidth = (minHeight) * this.geometry.imageRatio;
-												calculatedHeight = minHeight;
-											}
-											if (calculatedWidth < minWidth && minHeight <= (minWidth) / this.geometry.imageRatio) {
-												calculatedWidth = minWidth;
-												calculatedHeight = (minWidth) / this.geometry.imageRatio;
-											}
+												const minWidth = frameController.offsetLeft + frameController.clientWidth - imageController.offsetLeft;
+												const minHeight = frameController.offsetTop + frameController.clientHeight - imageController.offsetTop;
+												if (calculatedHeight < minHeight && minWidth <= minHeight * this.geometry.ratio) {
+													calculatedWidth = minHeight * this.geometry.ratio;
+													calculatedHeight = minHeight;
+												}
+												if (calculatedWidth < minWidth && minHeight <= minWidth / this.geometry.ratio) {
+													calculatedWidth = minWidth;
+													calculatedHeight = minWidth / this.geometry.ratio;
+												}
 
-											resizeWrapper.style.width = imageElement.style.width = calculatedWidth + 'px';
-											resizeWrapper.style.height = imageElement.style.height = calculatedHeight + 'px';
-											break;
-										}
-										case 'ne': {
-											const relImageX = x - this.geometry.imageX;
-											const relImageY = -y + this.geometry.imageY + this.geometry.imageHeight;
-											const perimteter = relImageX + relImageY;
-											let calculatedWidth = perimteter * this.geometry.imageRatio / (this.geometry.imageRatio + 1);
-											let calculatedHeight = perimteter - calculatedWidth;
-
-											const minWidth = this.geometry.realCropEndX - this.geometry.imageX;
-											const minHeight = startImageEndY - this.geometry.cropY;
-											if (calculatedHeight < minHeight && minWidth <= minHeight * this.geometry.imageRatio) {
-												calculatedWidth = (minHeight) * this.geometry.imageRatio;
-												calculatedHeight = minHeight;
+												imageController.style.width = calculatedWidth + 'px';
+												imageController.style.height = calculatedHeight + 'px';
+												break;
 											}
-											if (calculatedWidth < minWidth && minHeight <= (minWidth) / this.geometry.imageRatio) {
-												calculatedWidth = minWidth;
-												calculatedHeight = (minWidth) / this.geometry.imageRatio;
-											}
+										case 'ne':
+											{
+												const relImageX = x - imageController.offsetLeft;
+												const relImageY = -y + imageController.offsetTop + imageController.clientHeight;
+												const perimteter = relImageX + relImageY;
+												let calculatedWidth = perimteter * this.geometry.ratio / (this.geometry.ratio + 1);
+												let calculatedHeight = perimteter - calculatedWidth;
 
-											resizeWrapper.style.top = imageElement.style.top = startImageY + (startImageHeight - calculatedHeight) + 'px';
-											resizeWrapper.style.width = imageElement.style.width = calculatedWidth + 'px';
-											resizeWrapper.style.height = imageElement.style.height = calculatedHeight + 'px';
-											break;
-										}
-										case 'sw': {
-											const relImageX = -x + this.geometry.imageX + this.geometry.imageWidth;
-											const relImageY = y - this.geometry.imageY;
-											const perimteter = relImageX + relImageY;
-											let calculatedWidth = perimteter * this.geometry.imageRatio / (this.geometry.imageRatio + 1);
-											let calculatedHeight = perimteter - calculatedWidth;
+												const minWidth = frameController.offsetLeft + frameController.clientWidth - imageController.offsetLeft;
+												const minHeight = startImageY1 - frameController.offsetTop;
+												if (calculatedHeight < minHeight && minWidth <= minHeight * this.geometry.ratio) {
+													calculatedWidth = minHeight * this.geometry.ratio;
+													calculatedHeight = minHeight;
+												}
+												if (calculatedWidth < minWidth && minHeight <= minWidth / this.geometry.ratio) {
+													calculatedWidth = minWidth;
+													calculatedHeight = minWidth / this.geometry.ratio;
+												}
 
-											const minWidth = startImageEndX - this.geometry.cropX;
-											const minHeight = this.geometry.realCropEndY - this.geometry.imageY;
-											if (calculatedHeight < minHeight && minWidth <= minHeight * this.geometry.imageRatio) {
-												calculatedWidth = (minHeight) * this.geometry.imageRatio;
-												calculatedHeight = minHeight;
+												imageController.style.top = startImageY0 + (startImageHeight - calculatedHeight) + 'px';
+												imageController.style.width = calculatedWidth + 'px';
+												imageController.style.height = calculatedHeight + 'px';
+												break;
 											}
-											if (calculatedWidth < minWidth && minHeight <= (minWidth) / this.geometry.imageRatio) {
-												calculatedWidth = minWidth;
-												calculatedHeight = (minWidth) / this.geometry.imageRatio;
-											}
+										case 'sw':
+											{
+												const relImageX = -x + imageController.offsetLeft + imageController.clientWidth;
+												const relImageY = y - imageController.offsetTop;
+												const perimteter = relImageX + relImageY;
+												let calculatedWidth = perimteter * this.geometry.ratio / (this.geometry.ratio + 1);
+												let calculatedHeight = perimteter - calculatedWidth;
 
-											resizeWrapper.style.left = imageElement.style.left = startImageX + (startImageWidth - calculatedWidth) + 'px';
-											resizeWrapper.style.width = imageElement.style.width = calculatedWidth + 'px';
-											resizeWrapper.style.height = imageElement.style.height = calculatedHeight + 'px';
-											break;
-										}
-										case 'nw': {
-											const relImageX = -x + this.geometry.imageX + this.geometry.imageWidth;
-											const relImageY = -y + this.geometry.imageY + this.geometry.imageHeight;
-											const perimteter = relImageX + relImageY;
-											let calculatedWidth = perimteter * this.geometry.imageRatio / (this.geometry.imageRatio + 1);
-											let calculatedHeight = perimteter - calculatedWidth;
+												const minWidth = startImageX1 - frameController.offsetLeft;
+												const minHeight = frameController.offsetTop + frameController.clientHeight - imageController.offsetTop;
+												if (calculatedHeight < minHeight && minWidth <= minHeight * this.geometry.ratio) {
+													calculatedWidth = minHeight * this.geometry.ratio;
+													calculatedHeight = minHeight;
+												}
+												if (calculatedWidth < minWidth && minHeight <= minWidth / this.geometry.ratio) {
+													calculatedWidth = minWidth;
+													calculatedHeight = minWidth / this.geometry.ratio;
+												}
 
-											const minWidth = startImageEndX - this.geometry.cropX;
-											const minHeight = startImageEndY - this.geometry.cropY;
-											if (calculatedHeight < minHeight && minWidth <= minHeight * this.geometry.imageRatio) {
-												calculatedWidth = (minHeight) * this.geometry.imageRatio;
-												calculatedHeight = minHeight;
+												imageController.style.left = startImageX0 + (startImageWidth - calculatedWidth) + 'px';
+												imageController.style.width = calculatedWidth + 'px';
+												imageController.style.height = calculatedHeight + 'px';
+												break;
 											}
-											if (calculatedWidth < minWidth && minHeight <= (minWidth) / this.geometry.imageRatio) {
-												calculatedWidth = minWidth;
-												calculatedHeight = (minWidth) / this.geometry.imageRatio;
-											}
+										case 'nw':
+											{
+												const relImageX = -x + imageController.offsetLeft + imageController.clientWidth;
+												const relImageY = -y + imageController.offsetTop + imageController.clientHeight;
+												const perimteter = relImageX + relImageY;
+												let calculatedWidth = perimteter * this.geometry.ratio / (this.geometry.ratio + 1);
+												let calculatedHeight = perimteter - calculatedWidth;
 
-											resizeWrapper.style.left = imageElement.style.left = startImageX + (startImageWidth - calculatedWidth) + 'px';
-											resizeWrapper.style.top = imageElement.style.top = startImageY + (startImageHeight - calculatedHeight) + 'px';
-											resizeWrapper.style.width = imageElement.style.width = calculatedWidth + 'px';
-											resizeWrapper.style.height = imageElement.style.height = calculatedHeight + 'px';
-											break;
-										}
+												const minWidth = startImageX1 - frameController.offsetLeft;
+												const minHeight = startImageY1 - frameController.offsetTop;
+												if (calculatedHeight < minHeight && minWidth <= minHeight * this.geometry.ratio) {
+													calculatedWidth = minHeight * this.geometry.ratio;
+													calculatedHeight = minHeight;
+												}
+												if (calculatedWidth < minWidth && minHeight <= minWidth / this.geometry.ratio) {
+													calculatedWidth = minWidth;
+													calculatedHeight = minWidth / this.geometry.ratio;
+												}
+
+												imageController.style.left = startImageX0 + (startImageWidth - calculatedWidth) + 'px';
+												imageController.style.top = startImageY0 + (startImageHeight - calculatedHeight) + 'px';
+												imageController.style.width = calculatedWidth + 'px';
+												imageController.style.height = calculatedHeight + 'px';
+												break;
+											}
 									}
-								});
-								window.addEventListener('mouseup', this._state.cancelResizeMoveFunction = () => {
-									window.removeEventListener('mousemove', this._state.resizePointMoveFunction);
-									window.removeEventListener('mouseup', this._state.cancelResizeMoveFunction);
-								});
+								};
+
+								const clear = () => {
+									window.removeEventListener('mousemove', resize);
+									window.removeEventListener('mouseup', clear);
+								};
+
+								window.addEventListener('mousemove', resize);
+								window.addEventListener('mouseup', clear);
 							}
 						}
 					});
-				})
+				}))
 				.concat([
 					this._createElement('span', {
 						options: {
 							className: 'cmr-image-move-wrapper',
 							onmousedown: mouseDownEvent => {
-								const startRelativeBaseX = mouseDownEvent.clientX - this.geometry.baseX;
-								const startRelativeBaseY = mouseDownEvent.clientY - this.geometry.baseY;
+								const startRelativeBaseX = mouseDownEvent.clientX - this.geometry.containerX0;
+								const startRelativeBaseY = mouseDownEvent.clientY - this.geometry.containerY0;
 								const [x, y] = this._baseToRotateBase(startRelativeBaseX, startRelativeBaseY);
-								const startRelativeImageX = x - this.geometry.imageX;
-								const startRelativeImageY = y - this.geometry.imageY;
+								const startRelativeImageX = x - imageController.offsetLeft;
+								const startRelativeImageY = y - imageController.offsetTop;
 
-								window.addEventListener('mousemove', this._state.imageMoveFunction = imageMoveEvent => {
-									const relativeBaseX = imageMoveEvent.clientX - this.geometry.baseX;
-									const relativeBaseY = imageMoveEvent.clientY - this.geometry.baseY;
+								const move = imageMoveEvent => {
+									const relativeBaseX = imageMoveEvent.clientX - this.geometry.containerX0;
+									const relativeBaseY = imageMoveEvent.clientY - this.geometry.containerY0;
 									const [x, y] = this._baseToRotateBase(relativeBaseX, relativeBaseY);
 
 									const calculatedX = x - startRelativeImageX;
 									const calculatedY = y - startRelativeImageY;
 
-									const adjustedX = Math.min(Math.max(calculatedX, this.geometry.realCropEndX - this.geometry.imageWidth), this.geometry.cropX);
-									const adjustedY = Math.min(Math.max(calculatedY, this.geometry.realCropEndY - this.geometry.imageHeight), this.geometry.cropY);
+									const adjustedX = Math.min(Math.max(calculatedX, frameController.offsetLeft + frameController.clientWidth - imageController.clientWidth), frameController.offsetLeft);
+									const adjustedY = Math.min(Math.max(calculatedY, frameController.offsetTop + frameController.clientHeight - imageController.clientHeight), frameController.offsetTop);
 
-									resizeWrapper.style.left = imageElement.style.left = adjustedX + 'px';
-									resizeWrapper.style.top = imageElement.style.top = adjustedY + 'px';
-								});
-								window.addEventListener('mouseup', this._state.cancelImageMoveFunction = () => {
-									window.removeEventListener('mousemove', this._state.imageMoveFunction);
-									window.removeEventListener('mouseup', this._state.cancelImageMoveFunction);
-								});
+									imageController.style.left = adjustedX + 'px';
+									imageController.style.top = adjustedY + 'px';
+								};
+
+								const clear = () => {
+									window.removeEventListener('mousemove', move);
+									window.removeEventListener('mouseup',  clear);
+								};
+
+								window.addEventListener('mousemove',  move);
+								window.addEventListener('mouseup',  clear);
 							}
 						}
 					})
 				])
 			});
 
-			const cropElement = this._createElement('div', {
+			const frameController = this._createElement('div', {
 				options: {
-					style: `width: ${this.geometry.cropWidth}px; height: ${this.geometry.cropHeight}px; left: ${this.geometry.cropX}px; top: ${this.geometry.cropY}px;`,
-					className: 'cmr-crop'
+					style: `position: absolute; width: ${this.geometry.frameWidth}px; height: ${this.geometry.frameHeight}px;`,
+					className: 'cmr-frame-controller',
+				},
+				init: element => {
+					const [imageControllerX0, imageControllerY0] = this._worldToRel(0, 0, this.geometry.containerWidth, this.geometry.containerHeight, this.geometry.angleDegrees, this.geometry.frameContainerX0, this.geometry.frameContainerY0);
+					element.style.left = imageControllerX0 + 'px';
+					element.style.top = imageControllerY0 + 'px';
 				},
 				children: [
-					'e', 'n', 'w', 's', 'ne', 'nw', 'sw', 'se'
-				].map((function (positionName) {
-					return this._createElement('span', {
-						options: {
-							className: `cmr-cropper-point cmr-point-${positionName}`,
-							onmousedown: (function (event) {
-								event.stopPropagation();
-
-								const startCropElementSize = [cropElement.clientWidth, cropElement.clientHeight];
-								const startCropElementOffset = [cropElement.offsetLeft, cropElement.offsetTop];
-
-								window.addEventListener('mouseup', this._state.mouseUpResizeFunction = (function () {
-									window.removeEventListener('mouseup', this._state.mouseUpResizeFunction);
-									window.removeEventListener('mousemove', this._state.mouseMoveResizeFunction);
-								}).bind(this));
-
-								window.addEventListener('mousemove', this._state.mouseMoveResizeFunction = (function (event) {
-									var relX = event.clientX - this.geometry.baseX;
-									var relY = event.clientY - this.geometry.baseY;
-
-									var [cropRelX, cropRelY] = this._baseToRotateBase(relX, relY);
-
-									for (var position of positionName) {
-										switch (position) {
-											case "e":
-												{
-													realCropElement.style.width = cropElement.style.width = Math.min(cropRelX - cropElement.offsetLeft,(this.geometry.imageWidth - (cropElement.offsetLeft - this.geometry.imageX))) + 'px';
-													break;
-												}
-											case "s":
-												{
-													realCropElement.style.height = cropElement.style.height = Math.min(cropRelY - cropElement.offsetTop,(this.geometry.imageHeight - (cropElement.offsetTop - this.geometry.imageY))) + 'px';
-													break;
-												}
-											case "n":
-												{
-													const adjustedY = Math.max(this.geometry.imageY, cropRelY);
-													realCropElement.style.height = cropElement.style.height = startCropElementSize[1] - adjustedY + startCropElementOffset[1] + 'px';
-													realCropElement.style.top = cropElement.style.top = adjustedY + 'px';
-													break;
-												}
-											case "w":
-												{
-													const adjustedX = Math.max(this.geometry.imageX, cropRelX);
-													realCropElement.style.width = cropElement.style.width = startCropElementSize[0] - adjustedX + startCropElementOffset[0] + 'px';
-													realCropElement.style.left = cropElement.style.left = adjustedX + 'px';
-													break;
-												}
-										}
-									}
-								}).bind(this));
-
-							}).bind(this)
-						}
-					});
-				}).bind(this))
-				.concat(
-					[
-						'hor', 'vert'
-					].map((function (positionType) {
+						'e', 'n', 'w', 's', 'ne', 'nw', 'sw', 'se'
+					].map((function(positionName) {
 						return this._createElement('span', {
 							options: {
-								className: `cmr-cropper-frames ${positionType}`
+								className: `cmr-frame-controller-point cmr-point-${positionName}`,
+								onmousedown: (function(event) {
+									event.stopPropagation();
+									const startFrameWidth = frameController.clientWidth;
+									const startFrameHeight = frameController.clientHeight;
+									const startFrameX0 = frameController.offsetLeft;
+									const startFrameY0 = frameController.offsetTop;
+									const resize = event => {
+										const relX = event.clientX - this.geometry.containerX0;
+										const relY = event.clientY - this.geometry.containerY0;
+										const [
+											frameControllerRelX,
+											frameControllerRelY
+										] = this._baseToRotateBase(relX, relY);
+										for (const position of positionName) {
+											switch (position) {
+												case "e":
+													{
+														frameController.style.width = Math.min(frameControllerRelX - frameController.offsetLeft, (imageController.clientWidth - (frameController.offsetLeft - imageController.offsetLeft))) + 'px';
+														break;
+													}
+												case "s":
+													{
+														frameController.style.height = Math.min(frameControllerRelY - frameController.offsetTop, (imageController.clientHeight - (frameController.offsetTop - imageController.offsetTop))) + 'px';
+														break;
+													}
+												case "n":
+													{
+														const adjustedY = Math.max(imageController.offsetTop, frameControllerRelY);
+														frameController.style.height = startFrameHeight - adjustedY + startFrameY0 + 'px';
+														frameController.style.top = adjustedY + 'px';
+														break;
+													}
+												case "w":
+													{
+														const adjustedX = Math.max(imageController.offsetLeft, frameControllerRelX);
+														frameController.style.width = startFrameWidth - adjustedX + startFrameX0 + 'px';
+														frameController.style.left = adjustedX + 'px';
+														break;
+													}
+											}
+										}
+									};
+
+									const clear = () => {
+										window.removeEventListener('mouseup', clear);
+										window.removeEventListener('mousemove', resize);
+									};
+
+									window.addEventListener('mousemove', resize);
+									window.addEventListener('mouseup', clear);
+
+
+
+								}).bind(this)
 							}
 						});
 					}).bind(this))
-				)
-				.concat([
-					this._createElement('img', {
-						options: {
-							className: 'cmr-center-symbol',
-							src: "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools --%3E%3Csvg width='800px' height='800px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='M11 17C11 17.5523 11.4477 18 12 18C12.5523 18 13 17.5523 13 17V13H17C17.5523 13 18 12.5523 18 12C18 11.4477 17.5523 11 17 11H13V7C13 6.44771 12.5523 6 12 6C11.4477 6 11 6.44771 11 7V11H7C6.44772 11 6 11.4477 6 12C6 12.5523 6.44772 13 7 13H11V17Z' opacity='0.53' fill='%23ffffff'/%3E%3C/svg%3E"
-						}
-					})
-				])
+					.concat(
+						[
+							'hor', 'vert'
+						].map((function(positionType) {
+							return this._createElement('span', {
+								options: {
+									className: `cmr-grid ${positionType}`
+								}
+							});
+						}).bind(this))
+					)
+					.concat([
+						this._createElement('img', {
+							options: {
+								className: 'cmr-center-symbol',
+								src: "data:image/svg+xml,%3C%3Fxml%20version%3D'1.0'%20encoding%3D'utf-8'%3F%3E%3Csvg%20width%3D'800px'%20height%3D'800px'%20viewBox%3D'0%200%2024%2024'%20fill%3D'none'%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%3E%3Cpath%20fill-rule%3D'evenodd'%20clip-rule%3D'evenodd'%20d%3D'M11%2017C11%2017.5523%2011.4477%2018%2012%2018C12.5523%2018%2013%2017.5523%2013%2017V13H17C17.5523%2013%2018%2012.5523%2018%2012C18%2011.4477%2017.5523%2011%2017%2011H13V7C13%206.44771%2012.5523%206%2012%206C11.4477%206%2011%206.44771%2011%207V11H7C6.44772%2011%206%2011.4477%206%2012C6%2012.5523%206.44772%2013%207%2013H11V17Z'%20opacity%3D'0.53'%20fill%3D'%23ffffff'%2F%3E%3C%2Fsvg%3E"
+							}
+						})
+					])
 			});
 
-			const rotatedBaseWrapper = this._createElement('div', {
+			const controller = this._createElement('div', {
 				options: {
-					style: ` transform: rotate(${this.geometry.angle}deg);`,
-					className: 'cmr-rotated-base-wrapper',
+					style: `position: absolute; width: 100%; height: 100%; transform: rotate(${this.geometry.angleDegrees}deg);`,
+					className: 'cmr-controller'
 				},
 				children: [
-					cropElement,
-					resizeWrapper
+					frameController,
+					imageController
 				],
-				parent: this._baseElement,
+				parent: container
 			});
-			
-			return rotatedBaseWrapper;
+
+			return this._controller = controller;
+
 		}
 
 		_createElement(tagName, {
-			options = {}, attributes = {}, children = [], parent, init
+			options = {},
+			attributes = {},
+			children = [],
+			parent,
+			init
 		}) {
-			var element = Object.assign(document.createElement(tagName), options);
+			const element = Object.assign(document.createElement(tagName), options);
 			for (const child of children)
 				element.appendChild(child);
 			for (const attr in attributes)
@@ -391,87 +519,22 @@ console.log("%cCMRLibrary version: 2.0.1", 'font-family: monospace; font-size: 1
 
 		dispose() {
 			if (this._state.isDisposed)
-				throw new Error('Instance is already disposed');
-			const cropperWrapper = this._baseElement.querySelector('.cmr-rotated-base-wrapper');
-			if (cropperWrapper !== null) {
-				this.removeCrop();
+				throw new Error('Instance was already disposed');
+			const frameperWrapper = this._container.querySelector('.cmr-rotated-Container-wrapper');
+			if (frameperWrapper !== null) {
+				this.removeframe();
 			}
-			delete this._baseElement._cmr;
-			this._baseElement = null;
+			delete this._container._cmr;
+			this._container = null;
 			this._state.isDisposed = true;
 		}
 
 	}
 
-	ImageProcessor.isImageProcessor = function(baseElement) {
-		return '_cmr' in baseElement;
+	ImageProcessor.isImageProcessor = function(container) {
+		return '_cmr' in container;
 	};
 
 	CMR.ImageProcessor = ImageProcessor;
-
-	CMR.createImageAsync = function(image, options, callback) {
-		image = image instanceof HTMLImageElement ? image : Object.assign(document.createElement('img'), {src: image});
-		if (typeof callback == 'function') {
-			image.complete ? callback(CMR.createImage(image, options)) : image.addEventListener('load', () => callback(CMR.createImage(image, options)));
-		} else {
-			return new Promise(resolve => image.addEventListener('load', () => resolve(CMR.createImage(image, options))));
-		}
-	};
-
-	CMR.createImage = function createImage(image, {
-		baseWidth = image.naturalWidth,
-		baseHeight = image.naturalHeight,
-		cropX = 0,
-		cropY = 0,
-		cropWidth = image.naturalWidth,
-		cropHeight = image.naturalHeight,
-		imageX = 0,
-		imageY = 0,
-		imageWidth = image.naturalWidth,
-		imageHeight = image.naturalHeight,
-		angle = 0,
-	} = {}) {
-		function createElement(tagName, {
-			options = {}, attributes = {}, children = [], parent, init
-		}) {
-			var element = Object.assign(document.createElement(tagName), options);
-			for (const child of children)
-				element.appendChild(child);
-			for (const attr in attributes)
-				element.setAttribute(attr, attributes[attr]);
-			if (parent instanceof Element)
-				parent.appendChild(element);
-			if (typeof init == 'function')
-				init(element);
-			return element;
-		}
-
-		return createElement('div', {
-			options: {
-				className: 'cmr-base',
-				style: `width: ${baseWidth}px; height: ${baseHeight}px;`
-			},
-			children: [
-				createElement('div', {
-					options: {
-						className: 'cmr-rotation-base',
-						style: `transform: rotate(${angle}deg)`
-					},
-					children: [
-						Object.assign(image, {
-							className: 'cmr-image',
-							style: `width: ${imageWidth}px; height: ${imageHeight}px; left: ${imageX}px; top: ${imageY}px;`
-						}),
-						createElement('div', {
-							options: {
-								className: 'cmr-real-crop',
-								style: `width: ${cropWidth}px; height: ${cropHeight}px; left: ${cropX}px; top: ${cropY}px;`,
-							}
-						})
-					]
-				})
-			]
-		});
-	};
 
 })();

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    </head>
+    <body>
+        <style>
+#div1 {
+  width: 200px;  /* just for demonstration */
+  height: 200px; /* just for demonstration */
+  border: 1px solid black;
+}
+
+#div2 {
+  position: relative; /* now, div2 is the positioning context for div3 */
+  width: 100%;  /* div2 takes the full width of div1 */
+  height: 100%; /* div2 takes the full height of div1 */
+  overflow: hidden; /* hides any overflow including div3 if it overflows div2 boundaries */
+  border: 1px solid red;
+}
+
+#div3 {
+  position: absolute;
+  top: 0;  /* adjust as per your requirement */
+  left: 0;  /* adjust as per your requirement */
+  height: 50px; /* just for demonstration */
+  width: 50px;  /* just for demonstration */
+  border: 1px solid blue;
+}
+          </style>
+          
+          <div id="div1">
+            <div id="div2">
+              <div id="div3"></div>
+            </div>
+          </div>
+          
+         
+    </body>
+</html>

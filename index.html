@@ -48,6 +48,12 @@
                 flex-direction: column;
                 align-items: center;
             }
+
+            #controls {
+                z-index: 9999;
+                display: flex;
+                flex-direction: row;
+            }
         </style>
     </head>
     <body>
@@ -55,32 +61,72 @@
             <div id="band">
                 <div class="content"></div>
                 <div class="example-content">
-                    <div id="example" class="cmr-base" style="width: 800px; height: 600px; background-color:lightblue;">
-                        <div class="cmr-rotation-base" style="transform: rotate(30deg);">
-                            <img class="cmr-image" src="example_image_apples.png" style="width: 600px; height: 450px; left: 110px; top: 70px;">
-                            <div class="cmr-real-crop" style="width: 505.731px; height: 363.512px; top: 120.488px; left: 156.269px;"></div>
+                    <div class="cmr-container" style="width: 800px; height: 600px; background-color:lightblue;">
+                        <div id="example1" class="cmr-frame" style="width: 273px; height: 277.221px; left: 366.405px; top: 18.2625px; transform: rotate(30deg);">
+                            <img class="cmr-image" src="example_image_apples.png" style="width: 428.211px; height: 321.158px; left: 0px; top: -23px;">
+                        </div>
+                        <div id="example2" class="cmr-frame" style="width: 200px; height: 150px; left: 0px; top: 0px; transform: rotate(80deg);">
+                            <img class="cmr-image" src="example_image_apples.png" style="width: 300px; height: 220px; left: -50px; top: -40px;">
+                        </div>
+                        <div id="example3" class="cmr-frame" style="width: 109.988px; height: 125.907px; left: 252.271px; top: 342.501px; transform: rotate(190deg);">
+                            <img class="cmr-image" src="example_image_apples.png" style="width: 300px; height: 220px; left: -165px; top: -84px;">
                         </div>
                     </div>
                 </div>
-                <div class="content">
-                    <div style="display: flex; flex-direction: row; width: 800px; gap: 10px; margin-top: 10px;">
-                        <button style="padding:10px;" onclick="setCrop();">setCrop</button>
-                        <button style="padding:10px;" onclick="removeCrop();">saveCrop</button>
-                    </div>
-                </div>
-            </div>
+                <div class="content" id="controls"></div>
+            </div> 
         </div>
         <script>
-            const base = document.getElementById("example");
-            const image = new window.CMR.ImageProcessor(base);
+            for (let i=1; i < 4; i++) {
+                const frame = document.getElementById("example" + i);
+                const image = new window.CMR.ImageProcessor(frame);
+                image._createElement('div', {
+                    options: {
+                        style: "display: flex; flex-direction: row; width: 800px; gap: 10px; margin-top: 10px;"
+                    },
+                    children: [
+                        image._createElement('div', {
+                            options: {
+                                style: 'display: flex; flex-direction: column; gap: 5px;',
+                            },
+                            children: [
 
-            function setCrop() {
-                image.setCrop();
+                                image._createElement('div', {
+                                    options: {
+                                        textContent: "IMAGE " + i
+                                    }
+                                }),
+
+                                image._createElement('div', {
+                                    options: {
+                                        style: 'display: flex; flex-direction: row; gap: 10px;'
+                                    },
+                                    children: [
+                                        image._createElement('button', {
+                                            options: {
+                                                style: "padding:10px;",
+                                                textContent: 'setController',
+                                                onclick: image.setController.bind(image)
+                                            }
+                                        }),
+                                        image._createElement('button', {
+                                            options: {
+                                                style: "padding:10px;",
+                                                textContent: 'removeController',
+                                                onclick: image.removeController.bind(image)
+                                            }
+                                        })
+                                    ]
+                                })
+
+                            ]
+                        }),
+
+                    ],
+                    parent: document.getElementById('controls')
+                });
             }
 
-            function removeCrop() {
-                image.removeCrop();
-            }
         </script>
     </body>
 </html>

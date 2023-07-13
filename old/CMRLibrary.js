@@ -48,7 +48,7 @@ console.log("%cCMRLibrary version: 2.0.1", 'font-family: monospace; font-size: 1
 						baseX: this._baseElement.offsetLeft,
 						baseY: this._baseElement.offsetTop,
 						angle: Number.parseFloat((rotationBaseElement.style.transform.match(/rotate\((.*?)deg\)/) || [])[1]) || 0,
-						imageRatio: imageElement.naturalWidth / imageElement.naturalHeight
+						imageRatio: imageElement.naturalWidth / imageElement.naturalHeight,
 					};
 				}
 			});
@@ -109,7 +109,6 @@ console.log("%cCMRLibrary version: 2.0.1", 'font-family: monospace; font-size: 1
 			if (this._baseElement.querySelector('.cmr-rotated-base-wrapper'))
 				throw new Error('Crop is already exist');
 
-			const rotationBaseElement = this._baseElement.querySelector('.cmr-rotation-base');
 			const realCropElement = this._baseElement.querySelector('.cmr-real-crop');
 			const imageElement = this._baseElement.querySelector('.cmr-image');
 
