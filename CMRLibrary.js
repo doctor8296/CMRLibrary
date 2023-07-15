@@ -197,6 +197,7 @@ console.log("%cCMRLibrary version: 2.0.1", 'font-family: monospace; font-size: 1
 			const frame = this._frame;
 			const image = frame.querySelector('.cmr-image');
 			const container = frame.parentNode;
+			const minFrameSize = 0;
 
 			if (container.querySelector('.cmr-controller'))
 				throw new Error('frame is already exist');
@@ -421,26 +422,26 @@ console.log("%cCMRLibrary version: 2.0.1", 'font-family: monospace; font-size: 1
 											switch (position) {
 												case "e":
 													{
-														frameController.style.width = Math.min(frameControllerRelX - frameController.offsetLeft, (imageController.clientWidth - (frameController.offsetLeft - imageController.offsetLeft))) + 'px';
+														frameController.style.width = Math.max(minFrameSize, Math.min(frameControllerRelX - frameController.offsetLeft, (imageController.clientWidth - (frameController.offsetLeft - imageController.offsetLeft)))) + 'px';
 														break;
 													}
 												case "s":
 													{
-														frameController.style.height = Math.min(frameControllerRelY - frameController.offsetTop, (imageController.clientHeight - (frameController.offsetTop - imageController.offsetTop))) + 'px';
+														frameController.style.height = Math.max(minFrameSize, Math.min(frameControllerRelY - frameController.offsetTop, (imageController.clientHeight - (frameController.offsetTop - imageController.offsetTop)))) + 'px';
 														break;
 													}
 												case "n":
 													{
 														const adjustedY = Math.max(imageController.offsetTop, frameControllerRelY);
-														frameController.style.height = startFrameHeight - adjustedY + startFrameY0 + 'px';
-														frameController.style.top = adjustedY + 'px';
+														frameController.style.height = Math.max(startFrameHeight - adjustedY + startFrameY0, minFrameSize) + 'px';
+														frameController.style.top = Math.min(adjustedY, startFrameY0 + startFrameHeight - minFrameSize) + 'px';
 														break;
 													}
 												case "w":
 													{
 														const adjustedX = Math.max(imageController.offsetLeft, frameControllerRelX);
-														frameController.style.width = startFrameWidth - adjustedX + startFrameX0 + 'px';
-														frameController.style.left = adjustedX + 'px';
+														frameController.style.width = Math.max(startFrameWidth - adjustedX + startFrameX0, minFrameSize) + 'px';
+														frameController.style.left = Math.min(adjustedX, startFrameX0 + startFrameWidth - minFrameSize) + 'px';
 														break;
 													}
 											}
