@@ -48,7 +48,7 @@ const imageProcessor = new window.CMR.ImageProcessor(frame);
 ```
 
 Посмотреть пример можно по ссылке:
-https://github.com/doctor8296/CMRLibrary
+https://doctor8296.github.io/CMRLibrary/
 
 
 ## CMR.ImageProcessor.prototype.getFrame()
