@@ -19,9 +19,7 @@ Native library for cropping, resizing, and repositioning HTML images in JavaScri
 Объект CMR имеет следующую структуру:
 ```js
 CMR Object {
-  class ImageProcessor,
-  function createImage,
-  function createImageAsync
+  class ImageProcessor
 }
 ```
 
@@ -30,7 +28,7 @@ CMR Object {
 
 **Синтаксис**
 ```js
-new ImageProcessor(baseElement)
+new ImageProcessor(frameElement)
 ```
 
 **Аргументы**
@@ -39,25 +37,26 @@ new ImageProcessor(baseElement)
 
 **Пример**
 ```js
-const base = document.getElementById("example");
-const imageProcessor = new window.CMR.ImageProcessor(base);
+const frame = document.getElementById("example");
+const imageProcessor = new window.CMR.ImageProcessor(frame);
 ```
-Элемент основы "base" (контейнер) должен иметь следующую структуру:
+Элемент frame должен иметь следующую структуру:
 ```html
-<div class="cmr-base" style="width: 800px; height: 600px;">
-    <div class="cmr-rotation-base" style="transform: rotate(30deg);">
-        <img class="cmr-image" src="example_image_apples.png" style="width: 600px; height: 450px; left: 110px; top: 70px;">
-        <div class="cmr-real-crop" style="width: 505.731px; height: 363.512px; top: 120.488px; left: 156.269px;"></div>
-    </div>
+<div id="example" class="cmr-frame" style="width: 221.476px; height: 242.59px; left: 459.25px; top: 93.485px; transform: rotate(30deg);">
+    <img class="cmr-image" src="image.png" style="width: 428px; height: 321px; left: -113px; top: -57px;">
 </div>
 ```
 
-## CMR.ImageProcessor.prototype.getBase()
-Метод-геттер, для определения элемента базы, над конторым осуществляет контроль объект
+Посмотреть пример можно по ссылке:
+https://github.com/doctor8296/CMRLibrary
+
+
+## CMR.ImageProcessor.prototype.getFrame()
+Метод-геттер, для определения элемента фрейма, над конторым осуществляет контроль объект
 
 **Синтаксис**
 ```js
-getBase()
+getFrame()
 ```
 
 **Возвращаемое значение**
@@ -65,107 +64,119 @@ getBase()
 
 **Пример использования**
 ```js
-const base = document.getElementById("example");
-const imageProcessor = new window.CMR.ImageProcessor(base);
+const frame = document.getElementById("example");
+const imageController = new window.CMR.ImageProcessor(frame);
 
-console.log(base === imageProcessor.getBase()); // expected output: true
+console.log(frame === imageProcessor.getFrame()); // expected output: true
 ```
 
-## CMR.ImageProcessor.prototype.setCrop()
-Метод для инициализации кадрирования (добавление элементов)
+## CMR.ImageProcessor.prototype.setController()
+Метод для инициализации кадрирования (добавление элементов управления)
 
 **Синтаксис**
 ```js
-setCrop()
+setController()
 ```
 
 **Возвращаемое значение**
 `Element` - элемент покрытия, который добавляется в элемент основы, посредством которого происходит управление
 
 **Исключения**
-> Error Instance was disposed - на объекте был вызван метод dispose(), завершающий его работу
 > Error Crop is already exist - элемент покрытия уже существует
 
 **Пример использования**
 ```js
-const base = document.getElementById("example");
-const imageProcessor = new window.CMR.ImageProcessor(base);
-imageProcessor.setCrop();
+const frame = document.getElementById("example");
+const imageController = new window.CMR.ImageProcessor(frame);
+imageController.setController();
 ```
 
-## CMR.ImageProcessor.prototype.removeCrop()
+## CMR.ImageProcessor.prototype.removeController()
 Метод для удаления элемента покрытия (завершение редактирования)
 
 **Синтаксис**
 ```js
-removeCrop()
+removeController()
 ```
 
 **Возвращаемое значение**
 `undefined`
 
-**Исключения**
-> Error Instance was disposed - на объекте был вызван метод dispose(), завершающий его работу
-
 **Пример использования**
 ```js
-const base = document.getElementById("example");
-const imageProcessor = new window.CMR.ImageProcessor(base);
-imageProcessor.setCrop();
+const frame = document.getElementById("example");
+const imageController = new window.CMR.ImageProcessor(frame);
+imageController.setFrame();
 // some edits
-imageProcessor.removeCrop();
-```
-
-## CMR.ImageProcessor.prototype.dispose()
-Метод завершающий жизненный цикл объекта, после которого будет невозможно его повторно использовать
-Удаляет элемент покрытия, если он был добавлен. Удаляет ссылку на себя в элементе основы
-
-**Синтаксис**
-```js
-dispose()
-```
-
-**Возвращаемое значение**
-`undefined`
-
-**Исключения**
-> Error - Instance was already disposed
-
-**Пример использования**
-```js
-const base = document.getElementById("example");
-const imageProcessor = new window.CMR.ImageProcessor(base);
-
-// life circle
-imageProcessor.setCrop();
-// some edits
-imageProcessor.removeCrop();
-
-// life circle end
-imageProcessor.dispose();
+imageController.removeCrop();
 ```
 
 ## get CMR.ImageProcessor.prototype.geometry
 Свойства отображающее текущее состояние изображения
 ```js
 {
-    cropWidth: Float,
-    cropHeight: Float,
-    cropX: Float,
-    cropY: Float,
-    realCropEndX: Float,
-    realCropEndY: Float,
-    imageWidth: Float,
-    imageHeight: Float,
-    imageX: Float,
-    imageY: Float,
-    imageEndX: Float,
-    imageEndY: Float,
-    baseWidth: Float,
-    baseHeight: Float,
-    baseX: Float,
-    baseY: Float,
-    angle: Float,
-    imageRatio: Float
+    // FRAME
+
+    // container relative position
+    frameWidth: Number,
+    frameHeight: Number,
+    frameX0: Number,
+    frameY0: Number,
+    frameX1: Number,
+    frameY1: Number,
+    frameCenterX: Number,
+    frameCenterY: Number,
+    frameContainerX0: Number,
+    frameContainerY0: Number,
+    frameContainerX1: Number,
+    frameContainerY1: Number,
+    frameCenterContainerX: Number,
+    frameCenterContainerY: Number,
+
+    // IMAGE
+    imageWidth: Number,
+    imageHeight: Number,
+
+    // frame relative position
+    imageFrameX0: Number,
+    imageFrameY0: Number,
+    imageFrameX1: Number,
+    imageFrameY1: Number,
+    imageCenterFrameX: Number,
+    imageCenterFrameY: Number,
+
+    // container unrotated relative position
+    imageUnrotatedContainerX0: Number,
+    imageUnrotatedContainerY0: Number,
+    imageUnrotatedContainerX1: Number,
+    imageUnrotatedContainerY1: Number,
+    imageCenterUnrotatedContainerX: Number,
+    imageCenterUnrotatedContainerY: Number,
+
+    // container relative position
+    imageContainerX0: Number,
+    imageContainerY0: Number,
+    imageContainerX1: Number,
+    imageContainerY1: Number,
+    imageCenterContainerX: Number,
+    imageCenterContainerY: Number,
+
+    // CONTAINER
+    containerWidth: Number,
+    containerHeight: Number,
+
+    // document absolute container position
+    containerX0: Number,
+    containerY0: Number,
+    containerX1: Number,
+    containerY1: Number,
+    containerCenterX: Number,
+    containerCenterY: Number,
+
+    // ADDITIONAL VALUES
+    angle: Number,
+    angleDegrees: Number,
+    angleRadians: Number,
+    ratio: Number
 }
 ```

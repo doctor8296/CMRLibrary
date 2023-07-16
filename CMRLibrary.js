@@ -2,7 +2,7 @@
 // version 4.1.5
 // by Doctor8296
 
-console.log("%cCMRLibrary version: 2.0.1", 'font-family: monospace; font-size: 10 qpx; color: lime; background:black; padding-inline: 5px;');
+console.log("%cCMRLibrary version: 4.1.5", 'font-family: monospace; font-size: 10 qpx; color: lime; background:black; padding-inline: 5px;');
 
 
 (function() {
